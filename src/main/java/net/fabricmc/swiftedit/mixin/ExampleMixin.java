@@ -1,6 +1,6 @@
-package net.fabricmc.example.mixin;
+package net.fabricmc.swiftedit.mixin;
 
-import net.fabricmc.example.SwiftEdit;
+import net.fabricmc.swiftedit.SwiftEdit;
 import net.minecraft.client.gui.screen.TitleScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
