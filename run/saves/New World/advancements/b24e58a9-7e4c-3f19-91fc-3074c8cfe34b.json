@@ -1,9 +1,0 @@
-{
-  "minecraft:adventure/adventuring_time": {
-    "criteria": {
-      "minecraft:dark_forest": "2023-09-11 10:18:16 +0900"
-    },
-    "done": false
-  },
-  "DataVersion": 2975
-}
