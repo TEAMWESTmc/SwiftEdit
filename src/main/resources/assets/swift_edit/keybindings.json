@@ -1,0 +1,9 @@
+[
+  {
+    "name": "key.swift_edit.toggle",
+    "category": "key.categories.swift_edit",
+    "key": {
+      "default": "GLFW_KEY_LEFT_ALT"
+    }
+  }
+]
