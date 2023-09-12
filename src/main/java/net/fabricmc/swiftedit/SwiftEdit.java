@@ -1,11 +1,14 @@
 package net.fabricmc.swiftedit;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.block.Block;
+import net.minecraft.client.render.*;
 import net.minecraft.client.render.debug.DebugRenderer;
 import net.minecraft.entity.Entity;
+import net.minecraft.text.Text;
 import net.minecraft.util.math.Box;
 import net.minecraft.world.RaycastContext;
 import org.slf4j.Logger;
@@ -64,7 +67,9 @@ public class SwiftEdit implements ClientModInitializer {
 
 		ClientTickEvents.END_CLIENT_TICK.register(this::OnClientTick);
 
-		WorldRenderEvents.BEFORE_DEBUG_RENDER.register(this::OnDrawDebug);
+		//WorldRenderEvents.LAST.register(this::OnDrawDebug);
+
+		WorldRenderEvents.BEFORE_DEBUG_RENDER.register(this::OnDrawGuide);
 		/*
 		// Register a callback to render custom HUD elements
 		HudRenderCallback.EVENT.register((matrixStack, tickDelta) -> {
@@ -94,6 +99,7 @@ public class SwiftEdit implements ClientModInitializer {
 							Command("//pos1 "+pos1.getX()+","+pos1.getY()+","+pos1.getZ());
 							regionSetMode = 1;
 						}
+						client.player.sendMessage(Text.of("§2right click to cancel"),true);
 						break;
 					case 1:
 						// has set first position
@@ -134,6 +140,20 @@ public class SwiftEdit implements ClientModInitializer {
 
 	}
 
+	private void OnDrawGuide(WorldRenderContext context){
+		if(!isActivated) return;
+		RenderSystem.lineWidth(20);
+		RenderSystem.disableCull();
+		Tessellator tessellator = Tessellator.getInstance();
+		BufferBuilder builder = tessellator.getBuffer();
+		builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+		builder.vertex(0, 100,0).color(255,255,255,255).next();
+		builder.vertex(0, 100,20).color(255,255,255,255).next();
+		builder.vertex(20, 100,0).color(255,255,255,255).next();
+		builder.vertex(20, 100,20).color(255,255,255,255).next();
+		tessellator.draw();
+	}
+
 	private void OnDrawDebug(WorldRenderContext worldRenderContext){
 		// RENDER DEBUG
 		if(isActivated){
@@ -143,6 +163,7 @@ public class SwiftEdit implements ClientModInitializer {
 					if( aimPos !=null ) debugRenderer.drawBox(GetAimingPosition(),0,1.0F,0.0F,0.0F,0.1F);
 					break;
 				case 1:
+					client.player.sendMessage(Text.of("§2 size : asdf"),true);
 					BlockPos planarPos = GetPlanarPosition(pos1.getY()).add(0,1,0);
 					debugRenderer.drawBox(planarPos.add(0,-1,0),0,1,1,1,0.1f);
 					debugRenderer.drawBox(GetMinBlockPos(pos1,planarPos),GetMaxBlockPos(pos1,planarPos).add(1,0,1),1,1,1,0.1F);
@@ -203,7 +224,7 @@ public class SwiftEdit implements ClientModInitializer {
 
 	public void Activate(){
 		isActivated = true;
-		Command("isActivated");
+		client.player.sendMessage(Text.of("§2Activated"),true);
 	}
 
 	public void ClearRegion(){

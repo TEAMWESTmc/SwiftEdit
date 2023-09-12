@@ -31,11 +31,11 @@ guiScale:2
 particles:0
 maxFps:120
 difficulty:2
-graphicsMode:1
+graphicsMode:0
 ao:2
 prioritizeChunkUpdates:0
 biomeBlendRadius:2
-renderClouds:true
+renderClouds:false
 resourcePacks:["Fabric Mods"]
 incompatibleResourcePacks:[]
 lastServer:
