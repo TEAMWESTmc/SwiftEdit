@@ -1,9 +1,15 @@
-# Fabric Example Mod
+# Swift Edit
 
-## Setup
+## About
 
-For setup instructions please see the [fabric wiki page](https://fabricmc.net/wiki/tutorial:setup) that relates to the IDE that you are using.
+simple mod that enables faster/more convenient editing experience with WorldEdit
 
 ## License
 
-This template is available under the CC0 license. Feel free to learn from it and incorporate it in your own projects.
+\-
+
+## Credit
+
+inspired by [Effortless Building](https://www.curseforge.com/minecraft/mc-mods/effortless-building/files) mod by Requioss
+
+
