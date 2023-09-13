@@ -4,17 +4,17 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import net.minecraft.block.Block;
+import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.render.*;
 import net.minecraft.client.render.debug.DebugRenderer;
+import net.minecraft.client.util.InputUtil;
 import net.minecraft.entity.Entity;
 import net.minecraft.text.Text;
-import net.minecraft.util.math.Box;
 import net.minecraft.world.RaycastContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
-import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.MinecraftClient;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.option.KeyBinding;
@@ -24,13 +24,13 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.hit.HitResult;
 
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 import java.util.Objects;
 
-public class SwiftEdit implements ClientModInitializer {
+public class SwiftEdit implements ClientModInitializer, ScreenMouseEvents.AfterMouseScroll {
 
 	public static final MinecraftClient client = MinecraftClient.getInstance();
-	public static final Logger LOGGER = LoggerFactory.getLogger("swift_edit");
-	public static final TextRenderer textRenderer = client.textRenderer;
 	public static final DebugRenderer debugRenderer = client.debugRenderer;
 
 	public static boolean isActivated = false;
@@ -39,6 +39,9 @@ public class SwiftEdit implements ClientModInitializer {
 	public static int editMode = 0; // 0=set, 1=stack, 2=copy
 	public static BlockPos pos1;
 	public static BlockPos pos2;
+	public static int stackCount = 0;
+	public static BlockPos stackVector;
+	public static String stackDirection;
 
 	// KEY BINDS
 	public static KeyBinding kToggleQE;
@@ -50,12 +53,10 @@ public class SwiftEdit implements ClientModInitializer {
 	public static KeyBinding kRightClick;
 	public static boolean onKRightClick = true;
 
-	public double lineW = 1d;
-
 
 	@Override
 	public void onInitializeClient() {
-		ClearAll();
+		Deactivate();
 
 		// REGISTER KEYBIND
 		kToggleQE = KeyBindingHelper.registerKeyBinding(
@@ -66,16 +67,8 @@ public class SwiftEdit implements ClientModInitializer {
 		);
 
 		ClientTickEvents.END_CLIENT_TICK.register(this::OnClientTick);
-
-		//WorldRenderEvents.LAST.register(this::OnDrawDebug);
-
-		WorldRenderEvents.BEFORE_DEBUG_RENDER.register(this::OnDrawGuide);
-		/*
-		// Register a callback to render custom HUD elements
-		HudRenderCallback.EVENT.register((matrixStack, tickDelta) -> {
-			renderCustomText(matrixStack);
-		});
-		*/
+		WorldRenderEvents.LAST.register(this::OnDrawDebug);
+		//WorldRenderEvents.LAST.register(this::OnDrawGuide);
 	}
 
 	private void OnClientTick(MinecraftClient client){
@@ -83,56 +76,79 @@ public class SwiftEdit implements ClientModInitializer {
 		if(kLeftClick==null) kLeftClick = client.options.attackKey;
 		if(kRightClick==null) kRightClick = client.options.useKey;
 
+
+		// TOGGLE
 		if(onKToggleQE && kToggleQE.isPressed()){
-			if(isActivated)ClearAll();
+			if(isActivated) Deactivate();
 			else Activate();
 			onKToggleQE = false;
 		}else if(!kToggleQE.isPressed()) onKToggleQE = true;
 
 		if(isActivated){
+			if(stackCount>0){
+				editMode = 1;
+				SetStackDirection();
+			}
+			// LEFT CLICK
 			if(onKLeftClick && kLeftClick.isPressed()){
 				switch (regionSetMode){
 					case 0:
 						// click on nothing
-						pos1 = GetAimingPosition();
+						pos1 = GetPos1();
 						if(pos1 != null){
 							Command("//pos1 "+pos1.getX()+","+pos1.getY()+","+pos1.getZ());
 							regionSetMode = 1;
 						}
-						client.player.sendMessage(Text.of("§2right click to cancel"),true);
 						break;
 					case 1:
 						// has set first position
-						pos2 = GetPlanarPosition(pos1.getY());
+						pos2 = GetPlanarSize(pos1.getY());
 						regionSetMode =2;
 						break;
 					case 2:
 						// has set planar area
-						pos2 = GetHeight(pos2);
+						pos2 = GetPos2(pos2);
 						Command("//pos2 "+pos2.getX()+","+pos2.getY()+","+pos2.getZ());
 						regionSetMode = 3;
 						break;
 					case 3:
 						// has set region
-						Command("//set 0");
-						ClearRegion();
+						if(editMode == 0){
+							Command("//set 0");
+							client.player.sendMessage(Text.of("Remove"),true);
+							ClearRegion();
+						}else if(editMode == 1){
+							editMode = 0;
+							stackCount = 0;
+						}
 						break;
 				}
 				onKLeftClick = false;
 			} else if (!kLeftClick.isPressed()) onKLeftClick = true;
 
+			// RIGHT CLICK
 			if (onKRightClick && kRightClick.isPressed()){
 				if(regionSetMode == 1 || regionSetMode == 2){
 					ClearRegion();
 				} else if (regionSetMode == 3) {
-					Command("//set hand");
-					ClearRegion();
+					if(editMode==0){
+						client.player.sendMessage(Text.of("Set Block"),true);
+						Command("//set hand");
+						ClearRegion();
+					}else if(editMode ==1){
+						client.player.sendMessage(Text.of("Stack Selection : " + stackCount),true);
+						Command("//stack " + stackCount + " " + stackDirection);
+						ClearRegion();
+					}
 				}
 				onKRightClick = false;
 			} else if (!kRightClick.isPressed()) onKRightClick = true;
 
+			// TOGGLE SURFACE MODE
 			if (onKToggleSurface && kToggleSurface.isPressed()){
 				isSurfaceMode = !isSurfaceMode;
+				if(isSurfaceMode) client.player.sendMessage(Text.of("Surface Mode §aOn"),true);
+				else client.player.sendMessage(Text.of("Surface Mode §cOff"),true);
 				onKToggleSurface = false;
 			} else if(!kToggleSurface.isPressed()) onKToggleSurface = true;
 
@@ -140,18 +156,36 @@ public class SwiftEdit implements ClientModInitializer {
 
 	}
 
+	@Override
+	public void afterMouseScroll(Screen screen, double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+		Command("scroll" + verticalAmount);
+	}
+
 	private void OnDrawGuide(WorldRenderContext context){
 		if(!isActivated) return;
+		// Clear any previously set transformations or states
+		RenderSystem.clearColor(0.0F, 0.0F, 0.0F, 0.0F);
+		RenderSystem.clearDepth(1.0);
+		RenderSystem.disableTexture();
+
+		// Draw the quad
 		RenderSystem.lineWidth(20);
 		RenderSystem.disableCull();
 		Tessellator tessellator = Tessellator.getInstance();
 		BufferBuilder builder = tessellator.getBuffer();
 		builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
-		builder.vertex(0, 100,0).color(255,255,255,255).next();
-		builder.vertex(0, 100,20).color(255,255,255,255).next();
-		builder.vertex(20, 100,0).color(255,255,255,255).next();
-		builder.vertex(20, 100,20).color(255,255,255,255).next();
+
+		// Define the quad's vertices with color (RGBA)
+		builder.vertex(0, 0, 0).color(255, 255, 255, 255).next();
+		builder.vertex(0, 0, 20).color(255, 255, 255, 255).next();
+		builder.vertex(20, 0, -20).color(255, 255, 255, 255).next();
+		builder.vertex(20, 0, 0).color(255, 255, 255, 255).next();
+
 		tessellator.draw();
+
+		// Restore previous rendering states
+		RenderSystem.enableCull();
+		RenderSystem.enableTexture();
 	}
 
 	private void OnDrawDebug(WorldRenderContext worldRenderContext){
@@ -159,27 +193,30 @@ public class SwiftEdit implements ClientModInitializer {
 		if(isActivated){
 			switch (regionSetMode){
 				case 0:
-					BlockPos aimPos = GetAimingPosition();
-					if( aimPos !=null ) debugRenderer.drawBox(GetAimingPosition(),0,1.0F,0.0F,0.0F,0.1F);
+					BlockPos aimPos = GetPos1();
+					if( aimPos !=null ) debugRenderer.drawBox(GetPos1(),0,1.0F,0.0F,0.0F,0.1F);
 					break;
 				case 1:
-					client.player.sendMessage(Text.of("§2 size : asdf"),true);
-					BlockPos planarPos = GetPlanarPosition(pos1.getY()).add(0,1,0);
+					BlockPos planarPos = GetPlanarSize(pos1.getY()).add(0,1,0);
 					debugRenderer.drawBox(planarPos.add(0,-1,0),0,1,1,1,0.1f);
 					debugRenderer.drawBox(GetMinBlockPos(pos1,planarPos),GetMaxBlockPos(pos1,planarPos).add(1,0,1),1,1,1,0.1F);
+					client.player.sendMessage(Text.of("X:" + (Math.abs(planarPos.getX()-pos1.getX())+1)+" Z:" +(Math.abs(planarPos.getZ()-pos1.getZ())+1)),true);
 					break;
 				case 2:
-					BlockPos heightPos = GetHeight(pos2);
+					BlockPos heightPos = GetPos2(pos2);
 					debugRenderer.drawBox(heightPos,0,1,1,1,0.1f);
 					debugRenderer.drawBox(GetMinBlockPos(pos1,heightPos),GetMaxBlockPos(pos1,heightPos).add(1,1,1),1,1,1,0.1f);
+					client.player.sendMessage(Text.of("Height:" + (Math.abs(heightPos.getY()-pos1.getY())+1)),true);
 					break;
 				case 3:
+					debugRenderer.drawBox(GetMinBlockPos(pos1,pos2),GetMaxBlockPos(pos1,pos2).add(1,1,1),1,1,1,0.1f);
+					client.player.sendMessage(Text.of("Left Click : §lRemove \\nRight Click : §lSet Block\\nScroll : §lStack"),true);
 					break;
 			}
 		}
 	}
 
-	public BlockPos GetAimingPosition(){
+	public BlockPos GetPos1(){
 		Entity camera = client.getCameraEntity();
 		HitResult hit = client.world.raycast(new RaycastContext(camera.getCameraPosVec(1.0F), camera.getCameraPosVec(1.0F).add(camera.getRotationVec(1.0F).multiply(50)),
 				RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.NONE, camera
@@ -196,7 +233,7 @@ public class SwiftEdit implements ClientModInitializer {
 		return blockPos;
 	}
 
-	public BlockPos GetPlanarPosition(int yPos){
+	public BlockPos GetPlanarSize(int yPos){
 		Vec3d cameraPos = Objects.requireNonNull(client.getCameraEntity()).getPos();
 		Vec3d cameraView = client.getCameraEntity().getRotationVec(1.0F);
 
@@ -208,7 +245,7 @@ public class SwiftEdit implements ClientModInitializer {
 		return new BlockPos(blockX, yPos, blockZ);
 	}
 
-	public BlockPos GetHeight(BlockPos pPos){
+	public BlockPos GetPos2(BlockPos pPos){
 		Vec3d viewRot = client.getCameraEntity().getRotationVec(1.0F);
 		Vec3d pPosd = new Vec3d(pPos.getX(), pPos.getY(), pPos.getZ());
 		double distance = client.player.getPos().distanceTo(new Vec3d(pPosd.x,client.player.getPos().y, pPosd.getZ()));
@@ -224,7 +261,7 @@ public class SwiftEdit implements ClientModInitializer {
 
 	public void Activate(){
 		isActivated = true;
-		client.player.sendMessage(Text.of("§2Activated"),true);
+		client.player.sendMessage(Text.of("Swift Edit §aActivated"),true);
 	}
 
 	public void ClearRegion(){
@@ -232,46 +269,49 @@ public class SwiftEdit implements ClientModInitializer {
 		pos1 = null;
 		pos2 = null;
 		regionSetMode = 0;
+		editMode = 0;
+		stackCount = 0;
 		onKLeftClick = true;
 		onKRightClick = true;
 	}
 
-	public void ClearAll(){
+	public void Deactivate(){
 		ClearRegion();
 		isActivated = false;
+		client.player.sendMessage(Text.of("Swift Edit §cDeactivated"),true);
 	}
 
-	private void DrawSquareFromToXZ(Vec3d min, Vec3d max){
-		DrawLine(min.add(0,0,0),max.add(0,0,-(max.z-min.z))); // _
-		DrawLine(min.add(0,0,(max.z-min.z)),max.add(0,0,0)); // -
-		DrawLine(min.add(0,0,0),max.add(-(max.x-min.x),0,0)); // |.
-		DrawLine(min.add((max.x-min.x),0,0),max.add(0,0,0)); // .|
+	private void SetStackDirection(){
+		double playerYaw = client.player.getYaw();
+		double playerPitch = client.player.getPitch();
+
+		if(playerPitch > 45){
+			stackDirection = "u";
+			stackVector = new BlockPos(0,1,0);
+		}else if(playerPitch < -45){
+			stackDirection = "d";
+			stackVector = new BlockPos(0,-1,0);
+		}else if (playerYaw >= 45 && playerYaw < 135) {
+			stackDirection = "w";
+			stackVector = new BlockPos(1,0,0);
+		} else if (playerYaw >= 135 && playerYaw < 225) {
+			stackDirection = "n";
+			stackVector = new BlockPos(0,0,1);
+		} else if (playerYaw >= 225 && playerYaw < 315) {
+			stackDirection = "e";
+			stackVector = new BlockPos(-1,0,0);
+		} else {
+			stackDirection = "s";
+			stackVector = new BlockPos(0,0,-1);
+		}
 	}
-	private void DrawSquareXZ(Vec3d center,double extent){
-		DrawLine(center.add(-extent,0,-extent),center.add(extent,0,-extent)); // _
-		DrawLine(center.add(-extent,0,-extent),center.add(-extent,0,+extent)); // |.
-		DrawLine(center.add(extent,0,-extent),center.add(extent,0,+extent)); // .|
-		DrawLine(center.add(-extent,0,extent),center.add(extent,0,extent)); // -
-	}
-	private void DrawLine(Vec3d min,Vec3d max){
-		debugRenderer.drawBox(
-				min.x- lineW,min.y- lineW,min.z- lineW,max.x+ lineW,max.y+ lineW,max.z+ lineW,
-				1,1,1,1);
-	}
-	private Vec3d GetMinVec(BlockPos a, BlockPos b){
-		return new Vec3d(Math.min(a.getX(),b.getX()),Math.min(a.getY(),b.getY()),Math.min(a.getZ(),b.getZ()));
-	}
-	private Vec3d GetMaxVec(BlockPos a, BlockPos b){
-		return new Vec3d(Math.max(a.getX(),b.getX()),Math.max(a.getY(),b.getY()),Math.max(a.getZ(),b.getZ()));
-	}
+
 	private BlockPos GetMinBlockPos(BlockPos a,BlockPos b){
 		return new BlockPos(Math.min(a.getX(),b.getX()),Math.min(a.getY(),b.getY()),Math.min(a.getZ(),b.getZ()));
 	}
 	private BlockPos GetMaxBlockPos(BlockPos a, BlockPos b){
 		return new BlockPos(Math.max(a.getX(),b.getX()),Math.max(a.getY(),b.getY()),Math.max(a.getZ(),b.getZ()));
 	}
-	private Vec3d MinX(Vec3d a, Vec3d b){return a.x < b.x ? a:b;}
-	private Vec3d MaxX(Vec3d a, Vec3d b){return a.x > b.x ? a:b;}
-	private Vec3d MinZ(Vec3d a, Vec3d b){return a.z < b.z ? a:b;}
-	private Vec3d MaxZ(Vec3d a, Vec3d b){return a.z > b.z ? a:b;}
+
+
 }

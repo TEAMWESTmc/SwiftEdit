@@ -22,6 +22,7 @@
     ]
   },
   "mixins": [
+    "net.fabricmc.swiftedit.mixin.ScrollDisableMixin"
   ],
 
   "depends": {
