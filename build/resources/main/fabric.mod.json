@@ -15,19 +15,13 @@
   "license": "CC0-1.0",
   "icon": "assets/swift_edit/icon.png",
 
-  "environment": "*",
+  "environment": "client",
   "entrypoints": {
     "client": [
       "net.fabricmc.swiftedit.SwiftEdit"
     ]
   },
   "mixins": [
-  ],
-
-  "depends": {
-    "fabricloader": ">=0.14.6",
-    "fabric": "*",
-    "minecraft": "~1.18.2",
-    "java": ">=17"
-  }
+    "swiftedit.mixins.json"
+  ]
 }

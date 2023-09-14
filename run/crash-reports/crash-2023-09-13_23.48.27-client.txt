@@ -1,0 +1,232 @@
+---- Minecraft Crash Report ----
+// Who set us up the TNT?
+
+Time: 23. 9. 13. 오후 11:48
+Description: Initializing game
+
+java.lang.RuntimeException: Could not execute entrypoint stage 'client' due to errors, provided by 'swift_edit'!
+	at net.fabricmc.loader.impl.entrypoint.EntrypointUtils.lambda$invoke0$0(EntrypointUtils.java:51)
+	at net.fabricmc.loader.impl.util.ExceptionUtil.gatherExceptions(ExceptionUtil.java:33)
+	at net.fabricmc.loader.impl.entrypoint.EntrypointUtils.invoke0(EntrypointUtils.java:49)
+	at net.fabricmc.loader.impl.entrypoint.EntrypointUtils.invoke(EntrypointUtils.java:35)
+	at net.fabricmc.loader.impl.game.minecraft.Hooks.startClient(Hooks.java:53)
+	at net.minecraft.client.MinecraftClient.<init>(MinecraftClient.java:452)
+	at net.minecraft.client.main.Main.main(Main.java:197)
+	at net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider.launch(MinecraftGameProvider.java:468)
+	at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:74)
+	at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23)
+	at net.fabricmc.devlaunchinjector.Main.main(Main.java:86)
+Caused by: java.lang.NullPointerException: Cannot invoke "net.minecraft.client.network.ClientPlayerEntity.sendMessage(net.minecraft.text.Text, boolean)" because "net.fabricmc.swiftedit.SwiftEdit.client.player" is null
+	at net.fabricmc.swiftedit.SwiftEdit.Deactivate(SwiftEdit.java:281)
+	at net.fabricmc.swiftedit.SwiftEdit.onInitializeClient(SwiftEdit.java:59)
+	at net.fabricmc.loader.impl.entrypoint.EntrypointUtils.invoke0(EntrypointUtils.java:47)
+	... 8 more
+
+
+A detailed walkthrough of the error, its code path and all known details is as follows:
+---------------------------------------------------------------------------------------
+
+-- Head --
+Thread: Render thread
+Stacktrace:
+	at net.fabricmc.loader.impl.entrypoint.EntrypointUtils.lambda$invoke0$0(EntrypointUtils.java:51)
+	at net.fabricmc.loader.impl.util.ExceptionUtil.gatherExceptions(ExceptionUtil.java:33)
+	at net.fabricmc.loader.impl.entrypoint.EntrypointUtils.invoke0(EntrypointUtils.java:49)
+	at net.fabricmc.loader.impl.entrypoint.EntrypointUtils.invoke(EntrypointUtils.java:35)
+	at net.fabricmc.loader.impl.game.minecraft.Hooks.startClient(Hooks.java:53)
+	at net.minecraft.client.MinecraftClient.<init>(MinecraftClient.java:452)
+
+-- Initialization --
+Details:
+	Modules: 
+		ADVAPI32.dll:고급 Windows 32 기반 API:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		COMCTL32.dll:User Experience Controls Library:6.10 (WinBuild.160101.0800):Microsoft Corporation
+		CRYPT32.dll:Crypto API32:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		CRYPTBASE.dll:Base cryptographic API DLL:10.0.19041.546 (WinBuild.160101.0800):Microsoft Corporation
+		CRYPTSP.dll:Cryptographic Service Provider API:10.0.19041.546 (WinBuild.160101.0800):Microsoft Corporation
+		DBGHELP.DLL:Windows Image Helper:10.0.19041.867 (WinBuild.160101.0800):Microsoft Corporation
+		DNSAPI.dll:DNS 클라이언트 API DLL:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		GDI32.dll:GDI Client DLL:10.0.19041.2913 (WinBuild.160101.0800):Microsoft Corporation
+		IMM32.DLL:Multi-User Windows IMM32 API Client DLL:10.0.19041.2673 (WinBuild.160101.0800):Microsoft Corporation
+		IPHLPAPI.DLL:IP 도우미 API:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		KERNEL32.DLL:Windows NT 기반 API 클라이언트 DLL:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		KERNELBASE.dll:Windows NT 기반 API 클라이언트 DLL:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		MpOav.dll:IOfficeAntiVirus Module:4.18.23080.2006 (04d8e871ffe7ba6b2204046883e1ad9b7a5989ce):Microsoft Corporation
+		NLAapi.dll:Network Location Awareness 2:10.0.19041.3031 (WinBuild.160101.0800):Microsoft Corporation
+		NSI.dll:NSI User-mode interface DLL:10.0.19041.610 (WinBuild.160101.0800):Microsoft Corporation
+		NTASN1.dll:Microsoft ASN.1 API:10.0.19041.320 (WinBuild.160101.0800):Microsoft Corporation
+		Ole32.dll:Windows용 Microsoft OLE:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		OleAut32.dll:OLEAUT32.DLL:10.0.19041.3208 (WinBuild.160101.0800):Microsoft Corporation
+		POWRPROF.dll:전원 프로필 도우미 DLL:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		PSAPI.DLL:Process Status Helper:10.0.19041.546 (WinBuild.160101.0800):Microsoft Corporation
+		Pdh.dll:Windows 성능 데이터 도우미 DLL:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		RPCRT4.dll:원격 프로시저 호출 런타임:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		SHCORE.dll:SHCORE:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		SHELL32.dll:Windows 셸 공용 Dll:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		UMPDC.dll
+		USER32.dll:다중 사용자 Windows 사용자 API 클라이언트 DLL:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		USERENV.dll:Userenv:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		VCRUNTIME140.dll:Microsoft® C Runtime Library:14.27.29016.0 built by: vcwrkspc:Microsoft Corporation
+		VERSION.dll:Version Checking and File Installation Libraries:10.0.19041.546 (WinBuild.160101.0800):Microsoft Corporation
+		WINHTTP.dll:Windows HTTP Services:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		WINMM.dll:MCI API DLL:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		WS2_32.dll:Windows 소켓 2.0 32비트 DLL:10.0.19041.1081 (WinBuild.160101.0800):Microsoft Corporation
+		WSOCK32.dll:Windows Socket 32-Bit DLL:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		Wldp.dll:Windows 잠금 정책:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		amsi.dll:Anti-Malware Scan Interface:10.0.19041.2075 (WinBuild.160101.0800):Microsoft Corporation
+		bcrypt.dll:Windows 암호화 기본 라이브러리:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		bcryptPrimitives.dll:Windows Cryptographic Primitives Library:10.0.19041.2486 (WinBuild.160101.0800):Microsoft Corporation
+		clbcatq.dll:COM+ Configuration Catalog:2001.12.10941.16384 (WinBuild.160101.0800):Microsoft Corporation
+		combase.dll:Windows용 Microsoft COM:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		dbgcore.DLL:Windows Core Debugging Helpers:10.0.19041.2788 (WinBuild.160101.0800):Microsoft Corporation
+		dhcpcsvc.DLL:DHCP 클라이언트 서비스:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		dhcpcsvc6.DLL:DHCPv6 클라이언트:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		fwpuclnt.dll:FWP/IPsec 사용자 모드 API:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		gdi32full.dll:GDI Client DLL:10.0.19041.3271 (WinBuild.160101.0800):Microsoft Corporation
+		iertutil.dll:Internet Explorer용 런타임 유틸리티:11.00.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		java.dll:OpenJDK Platform binary:17.0.8.1:Eclipse Adoptium
+		java.exe:OpenJDK Platform binary:17.0.8.1:Eclipse Adoptium
+		jemalloc.dll
+		jimage.dll:OpenJDK Platform binary:17.0.8.1:Eclipse Adoptium
+		jli.dll:OpenJDK Platform binary:17.0.8.1:Eclipse Adoptium
+		jna17361045583626957785.dll:JNA native library:6.1.2:Java(TM) Native Access (JNA)
+		jsvml.dll:OpenJDK Platform binary:17.0.8.1:Eclipse Adoptium
+		jvm.dll:OpenJDK 64-Bit server VM:17.0.8.1:Eclipse Adoptium
+		kernel.appcore.dll:AppModel API Host:10.0.19041.546 (WinBuild.160101.0800):Microsoft Corporation
+		lwjgl.dll
+		management.dll:OpenJDK Platform binary:17.0.8.1:Eclipse Adoptium
+		management_ext.dll:OpenJDK Platform binary:17.0.8.1:Eclipse Adoptium
+		msvcp140.dll:Microsoft® C Runtime Library:14.27.29016.0 built by: vcwrkspc:Microsoft Corporation
+		msvcp_win.dll:Microsoft® C Runtime Library:10.0.19041.789 (WinBuild.160101.0800):Microsoft Corporation
+		msvcrt.dll:Windows NT CRT DLL:7.0.19041.546 (WinBuild.160101.0800):Microsoft Corporation
+		mswsock.dll:Microsoft Windows 소켓 2.0 서비스 공급자:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		napinsp.dll:전자 메일 명명 심(Shim) 공급자:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		ncrypt.dll:Windows NCrypt 라우터:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		net.dll:OpenJDK Platform binary:17.0.8.1:Eclipse Adoptium
+		netutils.dll:Net Win32 API Helpers DLL:10.0.19041.546 (WinBuild.160101.0800):Microsoft Corporation
+		nio.dll:OpenJDK Platform binary:17.0.8.1:Eclipse Adoptium
+		ntdll.dll:NT 계층 DLL:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		perfos.dll:Windows 시스템 성능 개체 DLL:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		pnrpnsp.dll:PNRP 네임스페이스 공급자:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		profapi.dll:User Profile Basic API:10.0.19041.3155 (WinBuild.160101.0800):Microsoft Corporation
+		rasadhlp.dll:Remote Access AutoDial Helper:10.0.19041.546 (WinBuild.160101.0800):Microsoft Corporation
+		rsaenh.dll:Microsoft Enhanced Cryptographic Provider:10.0.19041.320 (WinBuild.160101.0800):Microsoft Corporation
+		sechost.dll:Host for SCM/SDDL/LSA Lookup APIs:10.0.19041.320 (WinBuild.160101.0800):Microsoft Corporation
+		shlwapi.dll:셸 표준 이하 유틸리티 라이브러리:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		srvcli.dll:Server Service Client DLL:10.0.19041.3155 (WinBuild.160101.0800):Microsoft Corporation
+		sunmscapi.dll:OpenJDK Platform binary:17.0.8.1:Eclipse Adoptium
+		ucrtbase.dll:Microsoft® C Runtime Library:10.0.19041.789 (WinBuild.160101.0800):Microsoft Corporation
+		urlmon.dll:OLE32 Extensions for Win32:11.00.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		vcruntime140_1.dll:Microsoft® C Runtime Library:14.27.29016.0 built by: vcwrkspc:Microsoft Corporation
+		verify.dll:OpenJDK Platform binary:17.0.8.1:Eclipse Adoptium
+		win32u.dll:Win32u:10.0.19041.3271 (WinBuild.160101.0800):Microsoft Corporation
+		windows.storage.dll:Microsoft WinRT 저장소 API:10.0.19041.3324 (WinBuild.160101.0800):Microsoft Corporation
+		winrnr.dll:LDAP RnR Provider DLL:10.0.19041.546 (WinBuild.160101.0800):Microsoft Corporation
+		wshbth.dll:Windows Sockets Helper DLL:10.0.19041.546 (WinBuild.160101.0800):Microsoft Corporation
+		zip.dll:OpenJDK Platform binary:17.0.8.1:Eclipse Adoptium
+Stacktrace:
+	at net.minecraft.client.main.Main.main(Main.java:197)
+	at net.fabricmc.loader.impl.game.minecraft.MinecraftGameProvider.launch(MinecraftGameProvider.java:468)
+	at net.fabricmc.loader.impl.launch.knot.Knot.launch(Knot.java:74)
+	at net.fabricmc.loader.impl.launch.knot.KnotClient.main(KnotClient.java:23)
+	at net.fabricmc.devlaunchinjector.Main.main(Main.java:86)
+
+-- System Details --
+Details:
+	Minecraft Version: 1.18.2
+	Minecraft Version ID: 1.18.2
+	Operating System: Windows 10 (amd64) version 10.0
+	Java Version: 17.0.8.1, Eclipse Adoptium
+	Java VM Version: OpenJDK 64-Bit Server VM (mixed mode, sharing), Eclipse Adoptium
+	Memory: 2261563048 bytes (2156 MiB) / 3145728000 bytes (3000 MiB) up to 15015608320 bytes (14320 MiB)
+	CPUs: 12
+	Processor Vendor: GenuineIntel
+	Processor Name: Intel(R) Core(TM) i5-10400F CPU @ 2.90GHz
+	Identifier: Intel64 Family 6 Model 165 Stepping 3
+	Microarchitecture: unknown
+	Frequency (GHz): 2.90
+	Number of physical packages: 1
+	Number of physical CPUs: 6
+	Number of logical CPUs: 12
+	Graphics card #0 name: NVIDIA GeForce RTX 3070
+	Graphics card #0 vendor: NVIDIA (0x10de)
+	Graphics card #0 VRAM (MB): 4095.00
+	Graphics card #0 deviceId: 0x2484
+	Graphics card #0 versionInfo: DriverVersion=31.0.15.3141
+	Memory slot #0 capacity (MB): 8192.00
+	Memory slot #0 clockSpeed (GHz): 2.67
+	Memory slot #0 type: DDR4
+	Memory slot #1 capacity (MB): 32768.00
+	Memory slot #1 clockSpeed (GHz): 2.67
+	Memory slot #1 type: DDR4
+	Memory slot #2 capacity (MB): 8192.00
+	Memory slot #2 clockSpeed (GHz): 2.67
+	Memory slot #2 type: DDR4
+	Memory slot #3 capacity (MB): 8192.00
+	Memory slot #3 clockSpeed (GHz): 2.67
+	Memory slot #3 type: DDR4
+	Virtual memory max (MB): 60835.42
+	Virtual memory used (MB): 17404.21
+	Swap memory total (MB): 3584.00
+	Swap memory used (MB): 0.00
+	JVM Flags: 0 total; 
+	Fabric Mods: 
+		fabric 0.53.0+1.18.2
+		fabric-api-base 0.4.4+d7c144a860
+		fabric-api-lookup-api-v1 1.6.0+2373a54560
+		fabric-biome-api-v1 8.0.4+7b0f312660
+		fabric-blockrenderlayer-v1 1.1.12+3ac43d9560
+		fabric-command-api-v1 1.1.9+d7c144a860
+		fabric-commands-v0 0.2.8+b4f4f6cd60
+		fabric-containers-v0 0.1.21+d7c144a860
+		fabric-content-registries-v0 3.0.4+d82b939260
+		fabric-convention-tags-v1 1.0.1+474e4f7960
+		fabric-crash-report-info-v1 0.2.0+a6b0947860
+		fabric-data-generation-api-v1 2.0.9+e19de87d60
+		fabric-dimensions-v1 2.1.17+2540745460
+		fabric-entity-events-v1 1.4.8+d7c144a860
+		fabric-events-interaction-v0 0.4.19+d7c144a860
+		fabric-events-lifecycle-v0 0.2.15+d7c144a860
+		fabric-game-rule-api-v1 1.0.13+d7c144a860
+		fabric-gametest-api-v1 1.0.17+91b7aa6660
+		fabric-item-api-v1 1.5.0+85719ab760
+		fabric-item-groups-v0 0.3.12+91896a4960
+		fabric-key-binding-api-v1 1.0.12+54e5b2ec60
+		fabric-keybindings-v0 0.2.10+b4f4f6cd60
+		fabric-lifecycle-events-v1 2.0.3+2d83e92c60
+		fabric-loot-tables-v1 1.0.11+d7c144a860
+		fabric-mining-level-api-v1 2.1.1+81ea5b3c60
+		fabric-models-v0 0.3.6+d7c144a860
+		fabric-networking-api-v1 1.0.21+d882b91560
+		fabric-networking-v0 0.3.8+b4f4f6cd60
+		fabric-object-builder-api-v1 2.1.1+032c981d60
+		fabric-particles-v1 0.2.12+526dc1ac60
+		fabric-registry-sync-v0 0.9.8+0d9ab37260
+		fabric-renderer-api-v1 0.4.13+d882b91560
+		fabric-renderer-indigo 0.5.0+7faf0d8860
+		fabric-renderer-registries-v1 3.2.11+b4f4f6cd60
+		fabric-rendering-data-attachment-v1 0.3.7+d7c144a860
+		fabric-rendering-fluids-v1 2.0.2+54e5b2ec60
+		fabric-rendering-v0 1.1.13+b4f4f6cd60
+		fabric-rendering-v1 1.10.7+54e5b2ec60
+		fabric-resource-conditions-api-v1 2.0.3+91b7aa6660
+		fabric-resource-loader-v0 0.5.0+2afceb2960
+		fabric-screen-api-v1 1.0.10+d882b91560
+		fabric-screen-handler-api-v1 1.2.0+1f6558e860
+		fabric-textures-v0 1.0.12+3ac43d9560
+		fabric-transfer-api-v1 1.6.1+f4563ac860
+		fabric-transitive-access-wideners-v1 1.0.0+bd8a4a1860
+		fabricloader 0.14.22
+		java 17
+		minecraft 1.18.2
+		swift_edit 1.0
+	Launched Version: Fabric
+	Backend library: LWJGL version 3.2.2 build 10
+	Backend API: Unknown
+	Window size: <not initialized>
+	GL Caps: Using framebuffer using OpenGL 3.2
+	GL debug messages: <disabled>
+	Using VBOs: Yes
+	Is Modded: Definitely; Client brand changed to 'fabric'
+	Type: Client (map_client.txt)
+	CPU: <unknown>

@@ -4,16 +4,12 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.render.*;
 import net.minecraft.client.render.debug.DebugRenderer;
-import net.minecraft.client.util.InputUtil;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
 import net.minecraft.text.Text;
 import net.minecraft.world.RaycastContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
@@ -23,12 +19,12 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.hit.HitResult;
+import org.lwjgl.glfw.GLFWScrollCallback;
 
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseWheelEvent;
 import java.util.Objects;
 
-public class SwiftEdit implements ClientModInitializer, ScreenMouseEvents.AfterMouseScroll {
+public class SwiftEdit implements ClientModInitializer {
 
 	public static final MinecraftClient client = MinecraftClient.getInstance();
 	public static final DebugRenderer debugRenderer = client.debugRenderer;
@@ -52,6 +48,8 @@ public class SwiftEdit implements ClientModInitializer, ScreenMouseEvents.AfterM
 	public static boolean onKLeftClick = true;
 	public static KeyBinding kRightClick;
 	public static boolean onKRightClick = true;
+	GLFWScrollCallback defaultScroll;
+	boolean scrollCallbackSet = false;
 
 
 	@Override
@@ -67,14 +65,21 @@ public class SwiftEdit implements ClientModInitializer, ScreenMouseEvents.AfterM
 		);
 
 		ClientTickEvents.END_CLIENT_TICK.register(this::OnClientTick);
-		WorldRenderEvents.LAST.register(this::OnDrawDebug);
-		//WorldRenderEvents.LAST.register(this::OnDrawGuide);
+		//WorldRenderEvents.LAST.register(this::OnDrawDebug);
+		WorldRenderEvents.LAST.register(this::OnDrawGuide);
+
 	}
 
 	private void OnClientTick(MinecraftClient client){
 		if(client == null) return;
 		if(kLeftClick==null) kLeftClick = client.options.attackKey;
 		if(kRightClick==null) kRightClick = client.options.useKey;
+		if(client.getWindow()!=null && !scrollCallbackSet){
+			defaultScroll = GLFW.glfwSetScrollCallback(client.getWindow().getHandle(),(window,xOffset,yOffset) -> {
+				onMouseScroll(yOffset);
+			});
+			scrollCallbackSet = true;
+		}
 
 
 		// TOGGLE
@@ -156,64 +161,52 @@ public class SwiftEdit implements ClientModInitializer, ScreenMouseEvents.AfterM
 
 	}
 
-	@Override
-	public void afterMouseScroll(Screen screen, double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-		Command("scroll" + verticalAmount);
+	public void onMouseScroll(double vertical) {
+		Command("scroll" + vertical);
 	}
 
 	private void OnDrawGuide(WorldRenderContext context){
 		if(!isActivated) return;
-		// Clear any previously set transformations or states
-		RenderSystem.clearColor(0.0F, 0.0F, 0.0F, 0.0F);
-		RenderSystem.clearDepth(1.0);
-		RenderSystem.disableTexture();
-
-		// Draw the quad
-		RenderSystem.lineWidth(20);
+		RenderSystem.disableDepthTest();
 		RenderSystem.disableCull();
 		Tessellator tessellator = Tessellator.getInstance();
 		BufferBuilder builder = tessellator.getBuffer();
-		builder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
+		builder.begin(VertexFormat.DrawMode.DEBUG_LINES, VertexFormats.POSITION_COLOR);
+		RenderSystem.setShader(GameRenderer::getPositionColorShader);
+		MatrixStack matrixStack = context.matrixStack();
+		matrixStack.push();
 
-		// Define the quad's vertices with color (RGBA)
-		builder.vertex(0, 0, 0).color(255, 255, 255, 255).next();
-		builder.vertex(0, 0, 20).color(255, 255, 255, 255).next();
-		builder.vertex(20, 0, -20).color(255, 255, 255, 255).next();
-		builder.vertex(20, 0, 0).color(255, 255, 255, 255).next();
+		switch (regionSetMode){
+			case 0:
+				BlockPos aimpos = GetPos1();
+				if(aimpos!=null){
+					DrawCube(aimpos,aimpos,0xFFFFFFFF,context,builder);
+				}
+				break;
+			case 1:
+				BlockPos planarPos = GetPlanarSize(pos1.getY());
+				DrawCube(pos1,planarPos,0xAAFFFFFF,context,builder);
+				client.player.sendMessage(Text.of("X:" + (Math.abs(planarPos.getX()-pos1.getX())+1)+" Z:" +(Math.abs(planarPos.getZ()-pos1.getZ())+1)),true);
+				break;
+			case 2:
+				BlockPos heightPos = GetPos2(pos2);
+				DrawCube(pos1,heightPos,0xAAFFFFFF,context,builder);
+				client.player.sendMessage(Text.of("Height:" + (Math.abs(heightPos.getY()-pos1.getY())+1)),true);
+				break;
+			case 3:
+				client.player.sendMessage(Text.of("Left Click : §lRemove §rRight Click : §lSet Block §rScroll : §lStack"),true);
+				if(pos1!=null && pos2!=null){
+					DrawCube(pos1,pos2,0xFF01F099,context,builder);
+				}
+				break;
+		}
 
 		tessellator.draw();
 
 		// Restore previous rendering states
+		RenderSystem.enableDepthTest();
 		RenderSystem.enableCull();
-		RenderSystem.enableTexture();
-	}
-
-	private void OnDrawDebug(WorldRenderContext worldRenderContext){
-		// RENDER DEBUG
-		if(isActivated){
-			switch (regionSetMode){
-				case 0:
-					BlockPos aimPos = GetPos1();
-					if( aimPos !=null ) debugRenderer.drawBox(GetPos1(),0,1.0F,0.0F,0.0F,0.1F);
-					break;
-				case 1:
-					BlockPos planarPos = GetPlanarSize(pos1.getY()).add(0,1,0);
-					debugRenderer.drawBox(planarPos.add(0,-1,0),0,1,1,1,0.1f);
-					debugRenderer.drawBox(GetMinBlockPos(pos1,planarPos),GetMaxBlockPos(pos1,planarPos).add(1,0,1),1,1,1,0.1F);
-					client.player.sendMessage(Text.of("X:" + (Math.abs(planarPos.getX()-pos1.getX())+1)+" Z:" +(Math.abs(planarPos.getZ()-pos1.getZ())+1)),true);
-					break;
-				case 2:
-					BlockPos heightPos = GetPos2(pos2);
-					debugRenderer.drawBox(heightPos,0,1,1,1,0.1f);
-					debugRenderer.drawBox(GetMinBlockPos(pos1,heightPos),GetMaxBlockPos(pos1,heightPos).add(1,1,1),1,1,1,0.1f);
-					client.player.sendMessage(Text.of("Height:" + (Math.abs(heightPos.getY()-pos1.getY())+1)),true);
-					break;
-				case 3:
-					debugRenderer.drawBox(GetMinBlockPos(pos1,pos2),GetMaxBlockPos(pos1,pos2).add(1,1,1),1,1,1,0.1f);
-					client.player.sendMessage(Text.of("Left Click : §lRemove \\nRight Click : §lSet Block\\nScroll : §lStack"),true);
-					break;
-			}
-		}
+		matrixStack.pop();
 	}
 
 	public BlockPos GetPos1(){
@@ -222,11 +215,8 @@ public class SwiftEdit implements ClientModInitializer, ScreenMouseEvents.AfterM
 				RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.NONE, camera
 		));
 		if(hit.getType() != HitResult.Type.BLOCK) return null;
-
 		BlockHitResult blockHit = (BlockHitResult) hit;
-
 		BlockPos blockPos = blockHit.getBlockPos();
-
 		if (isSurfaceMode) {
 			blockPos = blockPos.offset(blockHit.getSide());
 		}
@@ -278,7 +268,7 @@ public class SwiftEdit implements ClientModInitializer, ScreenMouseEvents.AfterM
 	public void Deactivate(){
 		ClearRegion();
 		isActivated = false;
-		client.player.sendMessage(Text.of("Swift Edit §cDeactivated"),true);
+		if(client.player != null) client.player.sendMessage(Text.of("Swift Edit §cDeactivated"),true);
 	}
 
 	private void SetStackDirection(){
@@ -313,5 +303,30 @@ public class SwiftEdit implements ClientModInitializer, ScreenMouseEvents.AfterM
 		return new BlockPos(Math.max(a.getX(),b.getX()),Math.max(a.getY(),b.getY()),Math.max(a.getZ(),b.getZ()));
 	}
 
-
+	private void DrawCube(BlockPos a,BlockPos b,int color, WorldRenderContext context, BufferBuilder bBuilder){
+		BlockPos temp = GetMinBlockPos(a,b);
+		b = GetMaxBlockPos(a,b);
+		a = temp;
+		DrawSquare(a,b,color,context,bBuilder);
+		b = b.add(0,1,0);
+		DrawSquare(a.withY(b.getY()),b,color,context,bBuilder);
+		DrawLine(new Vec3d(a.getX(),a.getY(),a.getZ()),new Vec3d(a.getX(),b.getY(),a.getZ()),color,context,bBuilder);
+		DrawLine(new Vec3d(b.getX()+1,a.getY(),b.getZ()+1),new Vec3d(b.getX()+1,b.getY(),b.getZ()+1),color,context,bBuilder);
+		DrawLine(new Vec3d(a.getX(),a.getY(),b.getZ()+1),new Vec3d(a.getX(),b.getY(),b.getZ()+1),color,context,bBuilder);
+		DrawLine(new Vec3d(b.getX()+1,a.getY(),a.getZ()),new Vec3d(b.getX()+1,b.getY(),a.getZ()),color,context,bBuilder);
+	}
+	private void DrawSquare(BlockPos a,BlockPos b, int color, WorldRenderContext context, BufferBuilder bBuilder){
+		BlockPos temp = GetMinBlockPos(a,b);
+		b = GetMaxBlockPos(a,b).add(1,0,1);
+		a = temp;
+		DrawLine(new Vec3d(a.getX(),a.getY(),a.getZ()),new Vec3d(b.getX(),a.getY(),a.getZ()),color,context,bBuilder);
+		DrawLine(new Vec3d(a.getX(),a.getY(),b.getZ()),new Vec3d(b.getX(),a.getY(),b.getZ()),color,context,bBuilder);
+		DrawLine(new Vec3d(a.getX(),a.getY(),a.getZ()),new Vec3d(a.getX(),a.getY(),b.getZ()),color,context,bBuilder);
+		DrawLine(new Vec3d(b.getX(),a.getY(),a.getZ()),new Vec3d(b.getX(),a.getY(),b.getZ()),color,context,bBuilder);
+	}
+	private void DrawLine(Vec3d a, Vec3d b, int color, WorldRenderContext context, BufferBuilder bBuilder){
+		Vec3d pos = context.camera().getPos();
+		bBuilder.vertex(a.x - pos.x,a.y - pos.y,a.z - pos.z).color(color).next();
+		bBuilder.vertex(b.x - pos.x,b.y - pos.y,b.z - pos.z).color(color).next();
+	}
 }
