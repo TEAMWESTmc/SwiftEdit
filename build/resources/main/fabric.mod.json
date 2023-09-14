@@ -20,8 +20,5 @@
     "client": [
       "net.fabricmc.swiftedit.SwiftEdit"
     ]
-  },
-  "mixins": [
-    "swiftedit.mixins.json"
-  ]
+  }
 }

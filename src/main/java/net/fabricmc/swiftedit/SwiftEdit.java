@@ -3,17 +3,24 @@ package net.fabricmc.swiftedit;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientLoginConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
+import net.minecraft.client.ClientGameSession;
+import net.minecraft.client.gui.ClientChatListener;
 import net.minecraft.client.render.*;
 import net.minecraft.client.render.debug.DebugRenderer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
 import net.minecraft.text.Text;
+import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.RaycastContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.option.KeyBinding;
+import net.minecraft.world.WorldEvents;
 import org.lwjgl.glfw.GLFW;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.hit.BlockHitResult;
@@ -65,21 +72,18 @@ public class SwiftEdit implements ClientModInitializer {
 		);
 
 		ClientTickEvents.END_CLIENT_TICK.register(this::OnClientTick);
-		//WorldRenderEvents.LAST.register(this::OnDrawDebug);
 		WorldRenderEvents.LAST.register(this::OnDrawGuide);
-
+		ServerWorldEvents.UNLOAD.register((world,a)->{
+			Deactivate();
+		});
 	}
+
 
 	private void OnClientTick(MinecraftClient client){
 		if(client == null) return;
 		if(kLeftClick==null) kLeftClick = client.options.attackKey;
 		if(kRightClick==null) kRightClick = client.options.useKey;
-		if(client.getWindow()!=null && !scrollCallbackSet){
-			defaultScroll = GLFW.glfwSetScrollCallback(client.getWindow().getHandle(),(window,xOffset,yOffset) -> {
-				onMouseScroll(yOffset);
-			});
-			scrollCallbackSet = true;
-		}
+
 
 
 		// TOGGLE
@@ -90,8 +94,7 @@ public class SwiftEdit implements ClientModInitializer {
 		}else if(!kToggleQE.isPressed()) onKToggleQE = true;
 
 		if(isActivated){
-			if(stackCount>0){
-				editMode = 1;
+			if(editMode == 1){
 				SetStackDirection();
 			}
 			// LEFT CLICK
@@ -114,7 +117,9 @@ public class SwiftEdit implements ClientModInitializer {
 						// has set planar area
 						pos2 = GetPos2(pos2);
 						Command("//pos2 "+pos2.getX()+","+pos2.getY()+","+pos2.getZ());
+						SetScroll();
 						regionSetMode = 3;
+						SetStackDirection();
 						break;
 					case 3:
 						// has set region
@@ -162,7 +167,10 @@ public class SwiftEdit implements ClientModInitializer {
 	}
 
 	public void onMouseScroll(double vertical) {
-		Command("scroll" + vertical);
+		if(client.isPaused()) return;
+		stackCount = Math.max(stackCount+(int)vertical,0);
+		if(stackCount >0) editMode = 1;
+		else editMode = 0;
 	}
 
 	private void OnDrawGuide(WorldRenderContext context){
@@ -194,9 +202,20 @@ public class SwiftEdit implements ClientModInitializer {
 				client.player.sendMessage(Text.of("Height:" + (Math.abs(heightPos.getY()-pos1.getY())+1)),true);
 				break;
 			case 3:
-				client.player.sendMessage(Text.of("Left Click : §lRemove §rRight Click : §lSet Block §rScroll : §lStack"),true);
 				if(pos1!=null && pos2!=null){
 					DrawCube(pos1,pos2,0xFF01F099,context,builder);
+				}
+				if(editMode == 0){
+					client.player.sendMessage(Text.of("Left Click : §lRemove §rRight Click : §lSet Block §rScroll : §lStack"),true);
+				}else if(editMode == 1){
+					client.player.sendMessage(Text.of("Left Click : §lCancel §rRight Click : §lStack"),true);
+					if(pos1!=null && pos2!=null){
+						BlockPos stackOffset = GetMaxBlockPos(pos1, pos2).subtract(GetMinBlockPos(pos1, pos2)).add(1,1,1);
+						stackOffset = new BlockPos(stackOffset.getX() * stackVector.getX(), stackOffset.getY() * stackVector.getY(), stackOffset.getZ() * stackVector.getZ());
+						for (int i = 1; i<=stackCount; i++) {
+							DrawCube(pos1.add(stackOffset.multiply(i)), pos2.add(stackOffset.multiply(i)), 0xFFCCCCCC, context, builder);
+						}
+					}
 				}
 				break;
 		}
@@ -263,6 +282,7 @@ public class SwiftEdit implements ClientModInitializer {
 		stackCount = 0;
 		onKLeftClick = true;
 		onKRightClick = true;
+		ResetScroll();
 	}
 
 	public void Deactivate(){
@@ -271,28 +291,45 @@ public class SwiftEdit implements ClientModInitializer {
 		if(client.player != null) client.player.sendMessage(Text.of("Swift Edit §cDeactivated"),true);
 	}
 
+	private void SetScroll(){
+		if(client.getWindow()!=null && !scrollCallbackSet){
+			defaultScroll = GLFW.glfwSetScrollCallback(client.getWindow().getHandle(),(window,xOffset,yOffset) -> {
+				onMouseScroll(yOffset);
+			});
+			scrollCallbackSet = true;
+		}
+	}
+	private void ResetScroll(){
+		if(client.getWindow()!=null && scrollCallbackSet){
+			GLFW.glfwSetScrollCallback(client.getWindow().getHandle(),defaultScroll);
+			scrollCallbackSet = false;
+		}
+	}
+
 	private void SetStackDirection(){
 		double playerYaw = client.player.getYaw();
 		double playerPitch = client.player.getPitch();
+		if(playerYaw <0) playerYaw = -(Math.abs(playerYaw)%360)+720;
+		playerYaw = playerYaw%360;
 
 		if(playerPitch > 45){
-			stackDirection = "u";
-			stackVector = new BlockPos(0,1,0);
-		}else if(playerPitch < -45){
 			stackDirection = "d";
 			stackVector = new BlockPos(0,-1,0);
+		}else if(playerPitch < -45){
+			stackDirection = "u";
+			stackVector = new BlockPos(0,1,0);
 		}else if (playerYaw >= 45 && playerYaw < 135) {
 			stackDirection = "w";
-			stackVector = new BlockPos(1,0,0);
+			stackVector = new BlockPos(-1,0,0);
 		} else if (playerYaw >= 135 && playerYaw < 225) {
 			stackDirection = "n";
-			stackVector = new BlockPos(0,0,1);
+			stackVector = new BlockPos(0,0,-1);
 		} else if (playerYaw >= 225 && playerYaw < 315) {
 			stackDirection = "e";
-			stackVector = new BlockPos(-1,0,0);
+			stackVector = new BlockPos(1,0,0);
 		} else {
 			stackDirection = "s";
-			stackVector = new BlockPos(0,0,-1);
+			stackVector = new BlockPos(0,0,1);
 		}
 	}
 
