@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "id": "swift_edit",
+  "id": "swiftedit",
   "version": "1.0",
 
-  "name": "Swift Edit",
+  "name": "SwiftEdit",
   "description": "Faster, More Convenient WorldEdit Interactions",
   "authors": [
     "200Kolya"
@@ -13,7 +13,7 @@
   },
 
   "license": "CC0-1.0",
-  "icon": "assets/swift_edit/icon.png",
+  "icon": "assets/swiftedit/icon.png",
 
   "environment": "client",
   "entrypoints": {

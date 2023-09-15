@@ -11,6 +11,7 @@ import net.minecraft.client.ClientGameSession;
 import net.minecraft.client.gui.ClientChatListener;
 import net.minecraft.client.render.*;
 import net.minecraft.client.render.debug.DebugRenderer;
+import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
 import net.minecraft.text.Text;
@@ -55,6 +56,9 @@ public class SwiftEdit implements ClientModInitializer {
 	public static boolean onKLeftClick = true;
 	public static KeyBinding kRightClick;
 	public static boolean onKRightClick = true;
+	public static boolean kCtrl;
+	public static boolean kZ;
+	public static boolean onKUndo = true;
 	GLFWScrollCallback defaultScroll;
 	boolean scrollCallbackSet = false;
 
@@ -65,10 +69,10 @@ public class SwiftEdit implements ClientModInitializer {
 
 		// REGISTER KEYBIND
 		kToggleQE = KeyBindingHelper.registerKeyBinding(
-				new KeyBinding("key.swift_edit.toggle", GLFW.GLFW_KEY_LEFT_ALT, "key.categories.swift_edit")
+				new KeyBinding("Toggle SwiftEdit", GLFW.GLFW_KEY_LEFT_ALT, "SwiftEdit")
 		);
 		kToggleSurface = KeyBindingHelper.registerKeyBinding(
-				new KeyBinding("key.swift_edit.surface_mode", GLFW.GLFW_KEY_CAPS_LOCK, "key.categories.swift_edit")
+				new KeyBinding("Toggle SurfaceMode", GLFW.GLFW_KEY_CAPS_LOCK, "SwiftEdit")
 		);
 
 		ClientTickEvents.END_CLIENT_TICK.register(this::OnClientTick);
@@ -83,6 +87,8 @@ public class SwiftEdit implements ClientModInitializer {
 		if(client == null) return;
 		if(kLeftClick==null) kLeftClick = client.options.attackKey;
 		if(kRightClick==null) kRightClick = client.options.useKey;
+		kCtrl = InputUtil.isKeyPressed(client.getWindow().getHandle(),InputUtil.GLFW_KEY_LEFT_CONTROL);
+		kZ = InputUtil.isKeyPressed(client.getWindow().getHandle(),InputUtil.GLFW_KEY_Z);
 
 
 
@@ -96,6 +102,12 @@ public class SwiftEdit implements ClientModInitializer {
 		if(isActivated){
 			if(editMode == 1){
 				SetStackDirection();
+			}
+			if(onKUndo && kCtrl && kZ){
+				Command("//undo");
+				onKUndo = false;
+			}if(!kCtrl|| !kZ){
+				onKUndo = true;
 			}
 			// LEFT CLICK
 			if(onKLeftClick && kLeftClick.isPressed()){
@@ -157,8 +169,8 @@ public class SwiftEdit implements ClientModInitializer {
 			// TOGGLE SURFACE MODE
 			if (onKToggleSurface && kToggleSurface.isPressed()){
 				isSurfaceMode = !isSurfaceMode;
-				if(isSurfaceMode) client.player.sendMessage(Text.of("Surface Mode §aOn"),true);
-				else client.player.sendMessage(Text.of("Surface Mode §cOff"),true);
+				if(isSurfaceMode) client.player.sendMessage(Text.of("SurfaceMode §aOn"),true);
+				else client.player.sendMessage(Text.of("SurfaceMode §cOff"),true);
 				onKToggleSurface = false;
 			} else if(!kToggleSurface.isPressed()) onKToggleSurface = true;
 
@@ -186,29 +198,30 @@ public class SwiftEdit implements ClientModInitializer {
 
 		switch (regionSetMode){
 			case 0:
+				client.player.sendMessage(Text.of("SwiftEdit §aActivated  §rLClick : §l§6Start Selection  §r" + kToggleSurface.getBoundKeyLocalizedText().getString() + " : §l§6SurfaceMode §r§7-" + (isSurfaceMode?" §r§aON §r§7OFF":" §r§7ON §r§cOFF")),true);
 				BlockPos aimpos = GetPos1();
 				if(aimpos!=null){
-					DrawCube(aimpos,aimpos,0xFFFFFFFF,context,builder);
+					DrawCube(aimpos,aimpos,isSurfaceMode?0xFF0081FF:0xFFF5014C,context,builder);
 				}
 				break;
 			case 1:
 				BlockPos planarPos = GetPlanarSize(pos1.getY());
-				DrawCube(pos1,planarPos,0xAAFFFFFF,context,builder);
+				DrawCube(pos1,planarPos,0xFFF5014C,context,builder);
 				client.player.sendMessage(Text.of("X:" + (Math.abs(planarPos.getX()-pos1.getX())+1)+" Z:" +(Math.abs(planarPos.getZ()-pos1.getZ())+1)),true);
 				break;
 			case 2:
 				BlockPos heightPos = GetPos2(pos2);
-				DrawCube(pos1,heightPos,0xAAFFFFFF,context,builder);
+				DrawCube(pos1,heightPos,0xFFF5014C,context,builder);
 				client.player.sendMessage(Text.of("Height:" + (Math.abs(heightPos.getY()-pos1.getY())+1)),true);
 				break;
 			case 3:
 				if(pos1!=null && pos2!=null){
-					DrawCube(pos1,pos2,0xFF01F099,context,builder);
+					DrawCube(pos1,pos2,0xFFFFFFFF,context,builder);
 				}
 				if(editMode == 0){
-					client.player.sendMessage(Text.of("Left Click : §lRemove §rRight Click : §lSet Block §rScroll : §lStack"),true);
+					client.player.sendMessage(Text.of("LClick : §l§6Remove  §rRClick : §l§6Set Block  §rScroll : §l§6Stack"),true);
 				}else if(editMode == 1){
-					client.player.sendMessage(Text.of("Left Click : §lCancel §rRight Click : §lStack"),true);
+					client.player.sendMessage(Text.of("LClick : §l§6Cancel §rRClick : §l§6Stack"),true);
 					if(pos1!=null && pos2!=null){
 						BlockPos stackOffset = GetMaxBlockPos(pos1, pos2).subtract(GetMinBlockPos(pos1, pos2)).add(1,1,1);
 						stackOffset = new BlockPos(stackOffset.getX() * stackVector.getX(), stackOffset.getY() * stackVector.getY(), stackOffset.getZ() * stackVector.getZ());
@@ -270,7 +283,6 @@ public class SwiftEdit implements ClientModInitializer {
 
 	public void Activate(){
 		isActivated = true;
-		client.player.sendMessage(Text.of("Swift Edit §aActivated"),true);
 	}
 
 	public void ClearRegion(){
@@ -288,7 +300,7 @@ public class SwiftEdit implements ClientModInitializer {
 	public void Deactivate(){
 		ClearRegion();
 		isActivated = false;
-		if(client.player != null) client.player.sendMessage(Text.of("Swift Edit §cDeactivated"),true);
+		if(client.player != null) client.player.sendMessage(Text.of("SwiftEdit §cDeactivated"),true);
 	}
 
 	private void SetScroll(){
@@ -312,10 +324,10 @@ public class SwiftEdit implements ClientModInitializer {
 		if(playerYaw <0) playerYaw = -(Math.abs(playerYaw)%360)+720;
 		playerYaw = playerYaw%360;
 
-		if(playerPitch > 45){
+		if(playerPitch > 35){
 			stackDirection = "d";
 			stackVector = new BlockPos(0,-1,0);
-		}else if(playerPitch < -45){
+		}else if(playerPitch < -35){
 			stackDirection = "u";
 			stackVector = new BlockPos(0,1,0);
 		}else if (playerYaw >= 45 && playerYaw < 135) {
