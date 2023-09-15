@@ -72,7 +72,7 @@ public class SwiftEdit implements ClientModInitializer {
 				new KeyBinding("스위프트 에딧 토글", GLFW.GLFW_KEY_LEFT_ALT, "스위프트 에딧")
 		);
 		kToggleSurface = KeyBindingHelper.registerKeyBinding(
-				new KeyBinding("서피스 모드 토글", GLFW.GLFW_KEY_CAPS_LOCK, "스위프트 에딧")
+				new KeyBinding("스위프트 에딧 토글", GLFW.GLFW_KEY_CAPS_LOCK, "스위프트 에딧")
 		);
 
 		ClientTickEvents.END_CLIENT_TICK.register(this::OnClientTick);

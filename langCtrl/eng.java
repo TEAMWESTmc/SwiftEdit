@@ -69,10 +69,10 @@ public class SwiftEdit implements ClientModInitializer {
 
 		// REGISTER KEYBIND
 		kToggleQE = KeyBindingHelper.registerKeyBinding(
-				new KeyBinding("스위프트 에딧 토글", GLFW.GLFW_KEY_LEFT_ALT, "스위프트 에딧")
+				new KeyBinding("Toggle SwiftEdit", GLFW.GLFW_KEY_LEFT_ALT, "SwiftEdit")
 		);
 		kToggleSurface = KeyBindingHelper.registerKeyBinding(
-				new KeyBinding("서피스 모드 토글", GLFW.GLFW_KEY_CAPS_LOCK, "스위프트 에딧")
+				new KeyBinding("Toggle SurfaceMode", GLFW.GLFW_KEY_CAPS_LOCK, "SwiftEdit")
 		);
 
 		ClientTickEvents.END_CLIENT_TICK.register(this::OnClientTick);
@@ -137,7 +137,7 @@ public class SwiftEdit implements ClientModInitializer {
 						// has set region
 						if(editMode == 0){
 							Command("//set 0");
-							client.player.sendMessage(Text.of("지우기"),true);
+							client.player.sendMessage(Text.of("Remove"),true);
 							ClearRegion();
 						}else if(editMode == 1){
 							editMode = 0;
@@ -154,11 +154,11 @@ public class SwiftEdit implements ClientModInitializer {
 					ClearRegion();
 				} else if (regionSetMode == 3) {
 					if(editMode==0){
-						client.player.sendMessage(Text.of("블럭 채우기"),true);
+						client.player.sendMessage(Text.of("Set Block"),true);
 						Command("//set hand");
 						ClearRegion();
 					}else if(editMode ==1){
-						client.player.sendMessage(Text.of("스택횟수 : " + stackCount),true);
+						client.player.sendMessage(Text.of("Stack Selection : " + stackCount),true);
 						Command("//stack " + stackCount + " " + stackDirection);
 						ClearRegion();
 					}
@@ -169,8 +169,8 @@ public class SwiftEdit implements ClientModInitializer {
 			// TOGGLE SURFACE MODE
 			if (onKToggleSurface && kToggleSurface.isPressed()){
 				isSurfaceMode = !isSurfaceMode;
-				if(isSurfaceMode) client.player.sendMessage(Text.of("서피스모드 §aOn"),true);
-				else client.player.sendMessage(Text.of("서피스모드 §cOff"),true);
+				if(isSurfaceMode) client.player.sendMessage(Text.of("SurfaceMode §aOn"),true);
+				else client.player.sendMessage(Text.of("SurfaceMode §cOff"),true);
 				onKToggleSurface = false;
 			} else if(!kToggleSurface.isPressed()) onKToggleSurface = true;
 
@@ -198,7 +198,7 @@ public class SwiftEdit implements ClientModInitializer {
 
 		switch (regionSetMode){
 			case 0:
-				client.player.sendMessage(Text.of("스위프트모드 §a활성화  §r왼클 : §l§6영역 시작  §r" + kToggleSurface.getBoundKeyLocalizedText().getString() + " : §l§6서피스모드 §r§7-" + (isSurfaceMode?" §r§a켜짐 §r§7꺼짐":" §r§7켜짐 §r§c꺼짐")),true);
+				client.player.sendMessage(Text.of("SwiftEdit §aActivated  §rLClick : §l§6Start Selection  §r" + kToggleSurface.getBoundKeyLocalizedText().getString() + " : §l§6SurfaceMode §r§7-" + (isSurfaceMode?" §r§aON §r§7OFF":" §r§7ON §r§cOFF")),true);
 				BlockPos aimpos = GetPos1();
 				if(aimpos!=null){
 					DrawCube(aimpos,aimpos,isSurfaceMode?0xFF0081FF:0xFFF5014C,context,builder);
@@ -212,16 +212,16 @@ public class SwiftEdit implements ClientModInitializer {
 			case 2:
 				BlockPos heightPos = GetPos2(pos2);
 				DrawCube(pos1,heightPos,0xFFF5014C,context,builder);
-				client.player.sendMessage(Text.of("높이:" + (Math.abs(heightPos.getY()-pos1.getY())+1)),true);
+				client.player.sendMessage(Text.of("Height:" + (Math.abs(heightPos.getY()-pos1.getY())+1)),true);
 				break;
 			case 3:
 				if(pos1!=null && pos2!=null){
 					DrawCube(pos1,pos2,0xFFFFFFFF,context,builder);
 				}
 				if(editMode == 0){
-					client.player.sendMessage(Text.of("왼클 : §l§6지우기  §r우클 : §l§6블럭 채우기  §r스크롤 : §l§6스택"),true);
+					client.player.sendMessage(Text.of("LClick : §l§6Remove  §rRClick : §l§6Set Block  §rScroll : §l§6Stack"),true);
 				}else if(editMode == 1){
-					client.player.sendMessage(Text.of("왼클 : §l§6스택취소 §r우클 : §l§6스택"),true);
+					client.player.sendMessage(Text.of("LClick : §l§6Cancel §rRClick : §l§6Stack"),true);
 					if(pos1!=null && pos2!=null){
 						BlockPos stackOffset = GetMaxBlockPos(pos1, pos2).subtract(GetMinBlockPos(pos1, pos2)).add(1,1,1);
 						stackOffset = new BlockPos(stackOffset.getX() * stackVector.getX(), stackOffset.getY() * stackVector.getY(), stackOffset.getZ() * stackVector.getZ());
@@ -300,7 +300,7 @@ public class SwiftEdit implements ClientModInitializer {
 	public void Deactivate(){
 		ClearRegion();
 		isActivated = false;
-		if(client.player != null) client.player.sendMessage(Text.of("스위프트 에딧 §c비활성화"),true);
+		if(client.player != null) client.player.sendMessage(Text.of("SwiftEdit §cDeactivated"),true);
 	}
 
 	private void SetScroll(){
