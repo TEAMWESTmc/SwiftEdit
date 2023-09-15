@@ -5,6 +5,10 @@ out/
 classes/
 local.properties
 
+# Github
+
+.github/
+
 # eclipse
 
 *.launch
