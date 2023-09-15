@@ -12,6 +12,6 @@ CC0 1.0 Universal
 
 ## Credit
 
-inspired by [Effortless Building](https://www.curseforge.com/minecraft/mc-mods/effortless-building/files) mod by Requioss
+inspired by [Effortless Building](https://www.curseforge.com/minecraft/mc-mods/effortless-building/) mod by Requioss
 
 
