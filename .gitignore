@@ -1,68 +1,31 @@
-# Compiled class file
-*.class
+# gradle
 
-# Log file
-*.log
+.gradle/
+out/
+classes/
+local.properties
 
-# BlueJ files
-*.ctxt
+# eclipse
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
-*.war
-*.nar
-*.ear
-*.zip
-*.tar.gz
-*.rar
-
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
-replay_pid*
-
-# Gradle
-.gradle
-
-# VSCode
-.settings/
-.vscode/
-
-# Eclipse
-.checkstyle
-.classpath
-.metadata
-.settings
-.project
 *.launch
 
-# Intellij/Idea
-.factorypath
-.idea
+# idea
+
+.idea/
 *.iml
 *.ipr
 *.iws
 
-# Build artifacts
+# vscode
+
+.settings/
+.vscode/
 bin/
-build/
-jars/
-out/
-classes/
+.classpath
+.project
 
-# Generated sources
-# The trailing * is important, otherwise Git wouldn't evaluate the directories at all and we wouldn't be able to un-ignore some of them.
-**/src/generated/*
+# macos
 
-# Debug artifacts
-run
-*.log
+*.DS_Store
 
-# Windows
-*.db
-$RECYCLE.BIN/
-
-# Mac
-.DS_Store
-
+# fabric
